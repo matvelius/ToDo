@@ -39,8 +39,10 @@ struct HomeView: View {
                     }
                 }
 
-                HStack {
+                HStack(alignment: .center) {
                     addToDoItemsFromAPIButton()
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 10)
                 }
             }
         }
@@ -120,9 +122,18 @@ struct HomeView: View {
             viewModel.fetchToDoItemsFromAPI()
         } label: {
             Text("Add to-do's from API")
-                .foregroundStyle(Color.black)
+                .frame(maxWidth: .infinity)
+                .padding(10)
+                .foregroundColor(.gray)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 8,
+                        style: .continuous
+                    )
+                    .stroke(.gray, lineWidth: 2)
+                )
+                
         }
-        .buttonStyle(.bordered)
         .disabled(viewModel.isLoading)
     }
     

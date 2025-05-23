@@ -7,7 +7,6 @@
 
 import Foundation
 
-// TODO: put protocols into separate files
 protocol NetworkServiceProtocol {
     func fetchData<T: Decodable>(for urlString: String) async throws -> T
 }
@@ -26,7 +25,7 @@ public final class NetworkService: NetworkServiceProtocol {
             throw NetworkServiceError.unableToCreateURL
         }
         
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await urlSession.data(from: url)
         
         guard let httpUrlResponse = response as? HTTPURLResponse,
               httpUrlResponse.statusCode == 200 else {
