@@ -57,6 +57,8 @@ struct HomeView: View {
         }
     }
     
+    // MARK: - Subviews
+    
     @ViewBuilder
     func existingToDoItems() -> some View {
         ForEach(Array(viewModel.toDoItems.enumerated()), id: \.0) { index, item in
@@ -137,6 +139,8 @@ struct HomeView: View {
         .disabled(viewModel.isLoading)
     }
     
+    // MARK: - Helper methods
+    
     private func addToDoItem(with proxy: ScrollViewProxy) {
         viewModel.addToDoItem(title: newToDoItemTitle)
         newToDoItemTitle = ""
@@ -152,7 +156,6 @@ struct HomeView: View {
 }
 
 #Preview {
-    // TODO: update to use mocks!
     let localStorageService = LocalStorageService.shared
     let networkService = NetworkService.shared
     let viewModel = HomeViewModel(

@@ -6,9 +6,6 @@
 //
 
 struct ToDoItemFromAPI: Decodable {
-    // TODO: check if userId & id are necessary
-    let userId: Int
-    let id: Int
     let title: String
     let completed: Bool
     

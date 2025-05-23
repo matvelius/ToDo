@@ -20,14 +20,11 @@ class HomeViewModel {
     var isLoading: Bool = false
     var errorString: String?
     
-    // TODO: verify use of any 
     @MainActor
     init(localStorageService: any LocalStorageServiceProtocol,
          networkService: any NetworkServiceProtocol) {
         self.localStorageService = localStorageService
         self.networkService = networkService
-        // TODO: remove
-//        try! self.localStorageService.removeAllToDoItems()
     }
     
     func getAllToDoItems() {

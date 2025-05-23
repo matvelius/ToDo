@@ -8,7 +8,6 @@
 import Foundation
 import SwiftData
 
-// TODO: make more generic, factor out business logic
 protocol LocalStorageServiceProtocol {
     func getAllToDoItems() throws -> [ToDoItem]
     func addToDoItem(_ item: ToDoItem) throws
@@ -21,11 +20,9 @@ final class LocalStorageService: LocalStorageServiceProtocol {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
     
-    // TODO: investigate whether or not @MainActor is necessary
     @MainActor
     static let shared = LocalStorageService()
     
-    // TODO: investigate whether or not @MainActor is necessary
     @MainActor
     private init() {
         do {

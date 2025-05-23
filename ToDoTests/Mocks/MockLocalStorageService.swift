@@ -39,6 +39,4 @@ class MockLocalStorageService: LocalStorageServiceProtocol {
     func removeAllToDoItems() throws {
         toDoItems = []
     }
-    
-    
 }

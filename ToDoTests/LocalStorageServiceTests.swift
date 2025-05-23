@@ -10,9 +10,6 @@ import Testing
 
 @testable import ToDo
 
-// TODO: decide if I need to test crashing scenarios (probably not)
-
-// TODO: investigate whether or not @MainActor is necessary
 @MainActor
 @Suite(.serialized) class LocalStorageServiceTests {
     let sut: LocalStorageService!
