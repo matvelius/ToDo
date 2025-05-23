@@ -12,7 +12,10 @@ struct ToDoApp: App {
     let viewModel: HomeViewModel
     
     init() {
-        viewModel = HomeViewModel(localStorageService: LocalStorageService.shared)
+        viewModel = HomeViewModel(
+            localStorageService: LocalStorageService.shared,
+            networkService: NetworkService.shared
+        )
     }
     
     var body: some Scene {

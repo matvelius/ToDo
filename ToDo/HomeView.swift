@@ -13,24 +13,45 @@ struct HomeView: View {
     @State var newToDoItemTitle: String = ""
     
     @FocusState private var isNewToDoItemTextFieldFocused: Bool
+    @Namespace var bottomID
+    
+    @State var showAlert: Bool = false
 
     var body: some View {
         NavigationStack {
-            List {
-                existingToDoItems()
-                newToDoItemLine()
-            }
-            .listStyle(PlainListStyle())
-            .onAppear {
-                viewModel.getAllToDoItems()
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle("To-Do List")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    addToDoItemButton()
+            VStack {
+                ScrollViewReader { scrollViewProxy in
+                    List {
+                        existingToDoItems()
+                        newToDoItemLine(with: scrollViewProxy)
+                            .id(bottomID)
+                    }
+                    .listStyle(PlainListStyle())
+                    .onAppear {
+                        viewModel.getAllToDoItems()
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationTitle("To-Do List")
+                    .toolbar {
+                        ToolbarItemGroup(placement: .navigationBarTrailing) {
+                            addToDoItemButton(with: scrollViewProxy)
+                        }
+                    }
+                }
+
+                HStack {
+                    addToDoItemsFromAPIButton()
                 }
             }
+        }
+        .onChange(of: viewModel.errorString) { _, newValue in
+            guard newValue != nil else {
+                return
+            }
+            showAlert = true
+        }
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text("Error"), message: Text(viewModel.errorString ?? "Unknown Error. Please try again."))
         }
     }
     
@@ -58,15 +79,14 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    func newToDoItemLine() -> some View {
+    func newToDoItemLine(with scrollViewProxy: ScrollViewProxy) -> some View {
         HStack {
             Image(systemName: "circle.dotted")
                 .foregroundStyle(Color.gray)
             
             TextField("Add a new to-do", text: $newToDoItemTitle)
                 .onSubmit {
-                    viewModel.addToDoItem(title: newToDoItemTitle)
-                    newToDoItemTitle = ""
+                    addToDoItem(with: scrollViewProxy)
                 }
                 .focused($isNewToDoItemTextFieldFocused)
         }
@@ -79,22 +99,54 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    func addToDoItemButton() -> some View {
+    func addToDoItemButton(with scrollViewProxy: ScrollViewProxy) -> some View {
         Button {
-            if isNewToDoItemTextFieldFocused {
-                viewModel.addToDoItem(title: newToDoItemTitle)
-                newToDoItemTitle = ""
+            if isNewToDoItemTextFieldFocused && !newToDoItemTitle.isEmpty {
+                addToDoItem(with: scrollViewProxy)
             } else {
                 isNewToDoItemTextFieldFocused = true
+                withAnimation {
+                    scrollViewProxy.scrollTo(bottomID)
+                }
             }
         } label: {
             Image(systemName: "plus")
         }
     }
+    
+    @ViewBuilder
+    func addToDoItemsFromAPIButton() -> some View {
+        Button {
+            viewModel.fetchToDoItemsFromAPI()
+        } label: {
+            Text("Add to-do's from API")
+                .foregroundStyle(Color.black)
+        }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.isLoading)
+    }
+    
+    private func addToDoItem(with proxy: ScrollViewProxy) {
+        viewModel.addToDoItem(title: newToDoItemTitle)
+        newToDoItemTitle = ""
+        // adding a short delay fixes scrolling to the new item
+        Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            withAnimation {
+                proxy.scrollTo(bottomID)
+                isNewToDoItemTextFieldFocused = true
+            }
+        }
+    }
 }
 
 #Preview {
+    // TODO: update to use mocks!
     let localStorageService = LocalStorageService.shared
-    let viewModel = HomeViewModel(localStorageService: localStorageService)
+    let networkService = NetworkService.shared
+    let viewModel = HomeViewModel(
+        localStorageService: localStorageService,
+        networkService: networkService
+    )
     HomeView(viewModel: viewModel)
 }

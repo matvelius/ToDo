@@ -13,19 +13,22 @@ import Testing
 @MainActor
 @Suite(.serialized) class HomeViewModelTests {
     let sut: HomeViewModel!
-    let mockLocalStorageService: (any LocalStorageServiceProtocol)?
-    
+    var mockLocalStorageService: (any LocalStorageServiceProtocol)?
+    let mockNetworkService: (any NetworkServiceProtocol)?
+        
     init() {
         mockLocalStorageService = MockLocalStorageService()
-        sut = HomeViewModel(localStorageService: mockLocalStorageService!)
+        mockNetworkService = MockNetworkService()
+        sut = HomeViewModel(localStorageService: mockLocalStorageService!,
+                            networkService: mockNetworkService!)
     }
     
-    @Test func testGetAllToDoItems() {
+    @Test func getAllToDoItems() {
         sut.getAllToDoItems()
         #expect(sut.toDoItems.count == 3)
     }
     
-    @Test func testAddToDoItem() {
+    @Test func addToDoItem() {
         sut.getAllToDoItems()
         let expectedTitle = "Test Item 4"
         sut.addToDoItem(title: expectedTitle)
@@ -33,16 +36,38 @@ import Testing
         #expect(sut.toDoItems.last?.title == expectedTitle)
     }
     
-    @Test func testRemoveToDoItem() {
+    @Test func removeToDoItem() {
         sut.getAllToDoItems()
         sut.removeToDoItem(at: 2)
         #expect(sut.toDoItems.count == 2)
         #expect(sut.toDoItems.last?.title == "Test Item 2")
     }
     
-    @Test func testToggleItemCompletion() {
+    @Test func toggleItemCompletion() {
         sut.getAllToDoItems()
         sut.toggleItemCompletion(at: 0)
         #expect(sut.toDoItems[0].completed)
+    }
+    
+    @Test func fetchToDoItemsFromAPISuccess() {
+        // clearing local storage so that it doesn't
+        // interfere with the test
+        try! mockLocalStorageService!.removeAllToDoItems()
+        
+        sut.fetchToDoItemsFromAPI()
+        Thread.sleep(forTimeInterval: 0.1)
+        #expect(self.sut.errorString == nil)
+        #expect(self.sut.toDoItems.count == 3)
+    }
+    
+    @Test func fetchToDoItemsFromAPIFailure() {
+        // clearing local storage so that it doesn't
+        // interfere with the test
+        try! mockLocalStorageService!.removeAllToDoItems()
+        
+        sut.fetchToDoItemsFromAPI()
+        Thread.sleep(forTimeInterval: 0.1)
+        #expect(self.sut.errorString == nil)
+        #expect(self.sut.toDoItems.count == 3)
     }
 }

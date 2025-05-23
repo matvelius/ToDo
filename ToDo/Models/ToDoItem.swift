@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class ToDoItem: Identifiable, Equatable {
+final class ToDoItem: Equatable, Identifiable {
     @Attribute(.unique) var id: UUID
     
     var title: String
@@ -23,16 +23,3 @@ final class ToDoItem: Identifiable, Equatable {
         self.completed = completed
     }
 }
-
-//@Model
-//final class TestModel {
-//    @Attribute(.unique) var id: UUID
-//    
-//    var title: String
-//    
-//    init(id: UUID = .init(),
-//         title: String) {
-//        self.id = id
-//        self.title = title
-//    }
-//}

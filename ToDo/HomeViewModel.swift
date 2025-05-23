@@ -10,22 +10,33 @@ import os
 
 @Observable
 class HomeViewModel {
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.matveycodes.ToDo", category: String(describing: HomeViewModel.self))
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.matveycodes.ToDo",
+                                category: String(describing: HomeViewModel.self))
     
-    private let localStorageService: LocalStorageServiceProtocol
+    private let localStorageService: any LocalStorageServiceProtocol
+    private let networkService: any NetworkServiceProtocol
     
     var toDoItems: [ToDoItem] = []
+    var isLoading: Bool = false
+    var errorString: String?
     
+    // TODO: verify use of any 
     @MainActor
-    init(localStorageService: LocalStorageServiceProtocol) {
+    init(localStorageService: any LocalStorageServiceProtocol,
+         networkService: any NetworkServiceProtocol) {
         self.localStorageService = localStorageService
+        self.networkService = networkService
+        // TODO: remove
+//        try! self.localStorageService.removeAllToDoItems()
     }
     
     func getAllToDoItems() {
         do {
             toDoItems = try localStorageService.getAllToDoItems()
+            errorString = nil
         } catch {
-            logger.error("Unable to fetch items: \(error.localizedDescription)")
+            logger.error("Unable to fetch to-do items: \(error.localizedDescription)")
+            errorString = Constants.unableToFetchToDoItemsErrorMessage
         }
     }
     
@@ -34,17 +45,18 @@ class HomeViewModel {
             let item = ToDoItem(title: title)
             try localStorageService.addToDoItem(item)
             getAllToDoItems()
-            logger.info("Added to do item with title: \(title)")
+            logger.info("Added to-do item with title: \(title)")
+            errorString = nil
         } catch {
-            // TODO: Add error toast / alert for user
-            logger.error("Unable to add item: \(error.localizedDescription)")
+            logger.error("Unable to add to-do item: \(error.localizedDescription)")
+            errorString = Constants.unableToAddToDoItemErrorMessage
         }
     }
     
     func removeToDoItem(at index: Int?) {
         guard let index else {
-            // TODO: Add error toast / alert for user
             logger.error("Invalid index provided")
+            errorString = Constants.unableToRemoveToDoItemErrorMessage
             return
         }
         
@@ -52,9 +64,10 @@ class HomeViewModel {
             let id = toDoItems[index].id
             try localStorageService.removeToDoItem(with: id)
             getAllToDoItems()
+            errorString = nil
         } catch {
-            // TODO: Add error toast / alert for user
-            logger.error("Unable to remove item at index \(index): \(error.localizedDescription)")
+            logger.error("Unable to remove to-do item at index \(index): \(error.localizedDescription)")
+            errorString = Constants.unableToRemoveToDoItemErrorMessage
         }
     }
     
@@ -62,9 +75,38 @@ class HomeViewModel {
         do {
             let item = toDoItems[index]
             try localStorageService.update(item: item, with: !item.completed)
+            errorString = nil
         } catch {
-            // TODO: Add error toast / alert for user
-            logger.error("Unable to update item at index \(index): \(error.localizedDescription)")
+            logger.error("Unable to update to-do item at index \(index): \(error.localizedDescription)")
+            errorString = Constants.unableToToggleToDoItemCompletionErrorMessage
         }
+    }
+    
+    func fetchToDoItemsFromAPI() {
+        isLoading = true
+        Task {
+            do {
+                let items: [ToDoItemFromAPI] = try await networkService.fetchData(for: Constants.toDoItemsURL)
+                try items.forEach { item in
+                    try localStorageService.addToDoItem(item.toInternalModel())
+                }
+                getAllToDoItems()
+                errorString = nil
+            } catch {
+                logger.error("Unable to fetch to-do items from API: \(error.localizedDescription)")
+                errorString = Constants.unableToFetchToDoItemsFromTheAPIErrorMessage
+            }
+            
+            isLoading = false
+        }
+    }
+    
+    struct Constants {
+        static let toDoItemsURL = "https://jsonplaceholder.typicode.com/todos"
+        static let unableToFetchToDoItemsErrorMessage = "Unable to fetch to-do items. Please try again."
+        static let unableToAddToDoItemErrorMessage = "Unable to add to-do item. Please try again."
+        static let unableToRemoveToDoItemErrorMessage = "Unable to remove to-do item. Please try again."
+        static let unableToToggleToDoItemCompletionErrorMessage = "Unable to toggle to-do item completion. Please try again."
+        static let unableToFetchToDoItemsFromTheAPIErrorMessage = "Unable to fetch to-do items from the API. Please try again."
     }
 }
